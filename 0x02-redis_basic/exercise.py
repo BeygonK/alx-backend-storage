@@ -2,7 +2,18 @@
 """This module creates a cache class"""
 import uuid
 import redis
-from typing import Union
+from typing import Union, Optional, Callable
+import functools
+
+
+def count_calls(method: Callable) -> Callable:
+    """Decorator to count number of times method is called"""
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        key = method.__qualname__
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class Cache:
@@ -24,8 +35,7 @@ class Cache:
         self._redis.set(key, data)
         return key
 
-    def get(self, key: str, fn: Optional[Callable] = None) ->
-    Union[str, byte, int, float, None]:
+    def get(self, key: str, fn: Optional[Callable] = None) -> Union[str, bytes, int, float, None]:
         """Retrieves data and optionally convert
 
         Args:
